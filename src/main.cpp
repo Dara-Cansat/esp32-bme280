@@ -1,83 +1,38 @@
-/***************************************************************************
-  This is a library for the BME280 humidity, temperature & pressure sensor
+#include <Arduino.h>
 
-  Designed specifically to work with the Adafruit BME280 Breakout
-  ----> http://www.adafruit.com/products/2650
 
-  These sensors use I2C or SPI to communicate, 2 or 4 pins are required
-  to interface. The device's I2C address is either 0x76 or 0x77.
 
-  Adafruit invests time and resources providing this open source code,
-  please support Adafruit andopen-source hardware by purchasing products
-  from Adafruit!
+#include <Wire.h> 
+#include "cactus_io_BME280_I2C.h" 
 
-  Written by Limor Fried & Kevin Townsend for Adafruit Industries.
-  BSD license, all text above must be included in any redistribution
- ***************************************************************************/
+// Create BME280 object 
+BME280_I2C bme; // I2C using address 0x77 
+// or BME280_I2C bme(0x76); // I2C using address 0x76 
 
-#include <Wire.h>
-#include <SPI.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_BME280.h>
+void setup() { 
 
-#define BME_SCK 13
-#define BME_MISO 12
-#define BME_MOSI 11
-#define BME_CS 10
+Serial.begin(9600); 
+Serial.println("Bosch BME280 Pressure - Humidity - Temp Sensor | cactus.io"); 
 
-#define SEALEVELPRESSURE_HPA (1013.25)
+if (!bme.begin()) { 
+Serial.println("Could not find a valid BME280 sensor, check wiring!"); 
+while (1); 
+} 
 
-Adafruit_BME280 bme; // I2C
-//Adafruit_BME280 bme(BME_CS); // hardware SPI
-//Adafruit_BME280 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK); // software SPI
+bme.setTempCal(-1);// Temp was reading high so subtract 1 degree 
 
-unsigned long delayTime;
-
-void setup() {
-    Serial.begin(9600);
-    Serial.println(F("BME280 test"));
-
-    bool status;
-    
-    // default settings
-    // (you can also pass in a Wire library object like &Wire2)
-    status = bme.begin();  
-    if (!status) {
-        Serial.println("Could not find a valid BME280 sensor, check wiring!");
-        while (1);
-    }
-    
-    Serial.println("-- Default Test --");
-    delayTime = 1000;
-
-    Serial.println();
-}
-
-void printValues();
+Serial.println("Pressure\tHumdity\t\tTemp\ttTemp"); 
+} 
 
 void loop() { 
-    printValues();
-    delay(delayTime);
-}
 
+bme.readSensor(); 
 
-void printValues() {
-    Serial.print("Temperature = ");
-    Serial.print(bme.readTemperature());
-    Serial.println(" *C");
+Serial.print(bme.getPressure_MB()); Serial.print(" mb\t"); // Pressure in millibars 
+Serial.print(bme.getHumidity()); Serial.print(" %\t\t"); 
+Serial.print(bme.getTemperature_C()); Serial.print(" *C\t"); 
+Serial.print(bme.getTemperature_F()); Serial.println(" *F"); 
 
-    Serial.print("Pressure = ");
-
-    Serial.print(bme.readPressure() / 100.0F);
-    Serial.println(" hPa");
-
-    Serial.print("Approx. Altitude = ");
-    Serial.print(bme.readAltitude(SEALEVELPRESSURE_HPA));
-    Serial.println(" m");
-
-    Serial.print("Humidity = ");
-    Serial.print(bme.readHumidity());
-    Serial.println(" %");
-
-    Serial.println();
+// Add a 2 second delay. 
+delay(2000); //just here to slow down the output. 
 }
